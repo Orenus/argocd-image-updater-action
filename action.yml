@@ -1,11 +1,46 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'ArgoCD Image Updater'
+description: 'This action updates just the image ID (tag) of a previous action built image'
+author: 'Orenus'
 inputs:
-  milliseconds: # change this
+  argocd_host:
     required: true
-    description: 'input description here'
+    description: 'the ArgoCD host address (ex. argocd.domain.com)'
     default: 'default value if applicable'
+  argocd_port:
+    required: true
+    description: 'the ArgoCD port number (ex. 80, 443, 8080)'
+    default: 443
+  argocd_token:
+    required: false
+    description: 'ArgoCD token'
+  argocd_username:
+    required: true
+    description: 'ArgoCD username'
+  argocd_password:
+    required: true
+    description: 'ArgoCD password'
+  app_name:
+    required: false
+    description: 'the app name that this action is targeted at (optional, can use label to distinguish app)'
+  app_labels:
+    required: false
+    description: 'app label (key value pairs, comma separated ex. component=db-layer,type=backend)'
+    default: 443
+  new_image: 
+    required: true
+    description: 'the image tag or fully qualified name (repo/image:tag) based on usage (helm params vs kustomize which expects full)'
+  helm_param_key_name:
+    required: false
+    description: 'when using helm, the values file parameter name referring to image to be updated. ex: "deployments[0].containers[0].image.tag"'
+  dry_run:
+    required: false
+    description: 'When set true, it will just print what it would have done'
+    default: false
+
+# outputs:
+#   random_number:
+#     description: ""
+#     value: ${{ steps.name.outputs.var }}
 runs:
   using: 'node12'
   main: 'dist/index.js'

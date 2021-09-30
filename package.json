@@ -1,6 +1,6 @@
 {
-  "name": "typescript-action",
-  "version": "0.0.0",
+  "name": "argocd-image-updater-action",
+  "version": "0.0.1",
   "private": true,
   "description": "TypeScript template action",
   "main": "lib/main.js",
@@ -25,19 +25,22 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.4.0"
+    "@actions/core": "^1.4.0",
+    "axios": "^0.21.4"
   },
   "devDependencies": {
+    "@types/jest": "^27.0.2",
     "@types/node": "^16.3.3",
     "@typescript-eslint/parser": "^4.28.3",
     "@vercel/ncc": "^0.29.0",
+    "axios-mock-adapter": "^1.20.0",
     "eslint": "^7.31.0",
     "eslint-plugin-github": "^4.1.1",
     "eslint-plugin-jest": "^24.3.6",
     "jest": "^27.0.6",
     "js-yaml": "^4.1.0",
     "prettier": "2.2.1",
-    "ts-jest": "^27.0.3",
+    "ts-jest": "^27.0.5",
     "typescript": "^4.1.3"
   }
 }
