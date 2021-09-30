@@ -19,8 +19,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const axios = __nccwpck_require__(6545);
-const https = __nccwpck_require__(7211);
+const axios_1 = __importDefault(__nccwpck_require__(6545));
+const https_1 = __importDefault(__nccwpck_require__(7211));
 const GitOpsAppInfo_1 = __importDefault(__nccwpck_require__(3978));
 const SimpleLogger_1 = __importDefault(__nccwpck_require__(7911));
 const common_1 = __nccwpck_require__(6979);
@@ -46,10 +46,10 @@ class ArgoCDClient {
      */
     get client() {
         if (!this.clientInstance) {
-            const httpsAgent = new https.Agent({
-                rejectUnauthorized: false,
+            const httpsAgent = new https_1.default.Agent({
+                rejectUnauthorized: false
             });
-            this.clientInstance = axios.create({ httpsAgent });
+            this.clientInstance = axios_1.default.create({ httpsAgent });
         }
         return this.clientInstance;
     }
@@ -192,7 +192,7 @@ class ArgoCDClient {
             };
             // add the create namespace option
             if (createNamespace) {
-                options.syncOptions = { items: ["CreateNamespace=true"] };
+                options.syncOptions = { items: ['CreateNamespace=true'] };
             }
             try {
                 yield this.post(`/applications/${context.appName}/sync`, options);
@@ -226,12 +226,11 @@ class ArgoCDClient {
      */
     getSyncSourceType(appName) {
         return __awaiter(this, void 0, void 0, function* () {
-            const fullInfo = true;
             const result = yield this.getAppManifests(appName);
             if (!result || !result.sourceType) {
                 throw new Error(`don't know much about ${appName} manifest is missing sourceType`);
             }
-            if (result.sourceType == common_1.SyncSourceTypeEnum.HELM) {
+            if (result.sourceType === common_1.SyncSourceTypeEnum.HELM) {
                 return common_1.SyncSourceTypeEnum.HELM;
             }
             return common_1.SyncSourceTypeEnum.KUSTOMIZE;
@@ -276,7 +275,7 @@ class ArgoCDClient {
             if (!((_a = app.spec.source) === null || _a === void 0 ? void 0 : _a.kustomize)) {
                 throw new Error('unable to find the kustomize key on the source spec data!');
             }
-            const imageRepo = newImageID.split(':')[0] + ':';
+            const imageRepo = `${newImageID.split(':')[0]}:`;
             const imageToReplaceIndex = (((_b = app.spec.source.kustomize) === null || _b === void 0 ? void 0 : _b.images) || []).findIndex((e) => e.startsWith(imageRepo));
             const patchOpReplace = {
                 op: 'replace',
@@ -338,7 +337,13 @@ class ArgoCDClient {
     getApps(context, fullInfo = false) {
         return __awaiter(this, void 0, void 0, function* () {
             this.ensureIsLoggedIn();
-            const getParams = { params: { selector: context.selector, name: context.appName, project: context.project } };
+            const getParams = {
+                params: {
+                    selector: context.selector,
+                    name: context.appName,
+                    project: context.project
+                }
+            };
             let res;
             try {
                 res = yield this.get('/applications', getParams);
@@ -371,7 +376,7 @@ class ArgoCDClient {
         return __awaiter(this, void 0, void 0, function* () {
             this.ensureIsLoggedIn();
             if (!context.appName) {
-                throw new Error("appName must be provided in context");
+                throw new Error('appName must be provided in context');
             }
             const res = yield this.getApps(context);
             return res && res.length === 1;
@@ -399,20 +404,20 @@ class ArgoCDClient {
             this.ensureIsLoggedIn();
             const payload = [
                 {
-                    op: "add",
-                    path: "/metadata/labels",
+                    op: 'add',
+                    path: '/metadata/labels',
                     value: labels
                 }
             ];
             // const res = await this.patch(`/applications/${context.appName}`, payload);
             const command = `argocd app patch ${context.appName} --patch='${JSON.stringify(payload)}' --insecure --server= --auth-token=${this.token}`;
-            this.logger.debug("Set app labels cmd: <<< " + command + " >>>");
+            this.logger.debug(`Set app labels cmd: <<< ${command} >>>`);
             try {
                 // execSync(command);
-                this.logger.debug("exec argocd app patch done.");
+                this.logger.debug('exec argocd app patch done.');
             }
             catch (ex) {
-                this.logger.error("Update image command line exception: " + ex.message);
+                this.logger.error(`Update image command line exception: ${ex.message}`);
                 return false;
             }
             // return res.status === 200;
@@ -493,13 +498,13 @@ exports.default = GitOpsAppInfo;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SimpleLogLevelEum = void 0;
+/* eslint-disable no-console */
 var SimpleLogLevelEum;
 (function (SimpleLogLevelEum) {
     SimpleLogLevelEum[SimpleLogLevelEum["ERROR"] = 0] = "ERROR";
     SimpleLogLevelEum[SimpleLogLevelEum["INFO"] = 1] = "INFO";
     SimpleLogLevelEum[SimpleLogLevelEum["DEBUG"] = 2] = "DEBUG";
 })(SimpleLogLevelEum = exports.SimpleLogLevelEum || (exports.SimpleLogLevelEum = {}));
-;
 class SimpleLogger {
     constructor() {
         this._logLevel = SimpleLogLevelEum.INFO;
@@ -517,13 +522,13 @@ class SimpleLogger {
         return this._logLevel;
     }
     debug(message) {
-        this.logLevel.valueOf() <= SimpleLogLevelEum.DEBUG && console.log(message);
+        this.logLevel <= SimpleLogLevelEum.DEBUG && console.log(message);
     }
     info(message) {
-        this.logLevel.valueOf() <= SimpleLogLevelEum.INFO && console.log(message);
+        this.logLevel <= SimpleLogLevelEum.INFO && console.log(message);
     }
     error(message) {
-        this.logLevel.valueOf() <= SimpleLogLevelEum.ERROR && console.error(message);
+        this.logLevel <= SimpleLogLevelEum.ERROR && console.error(message);
     }
 }
 exports.default = SimpleLogger;
@@ -601,7 +606,8 @@ function run() {
             const appName = core.getInput('app_name');
             const appLabels = core.getInput('app_labels');
             const newImage = core.getInput('image');
-            const dryRun = core.getBooleanInput('dry_run');
+            const helmParamKeyName = core.getInput('helm_param_key_name');
+            // const dryRun: boolean = core.getBooleanInput('dry_run');
             const level = actionLogLevel;
             logger.setLogLevel(SimpleLogger_1.SimpleLogLevelEum[level]);
             const isLoggedIn = yield ArgoCDClient_1.default.instance.login(argocdUsername, argocdPassword, argocdHost, argocdPort);
@@ -613,6 +619,7 @@ function run() {
             // expecting a=1,b=2 , c=abc
             // will turn into: {a: "1", b: "2", c: "abc"} || "" into {}
             ctx.selector = utils_1.labelsStringToObject(appLabels);
+            yield ArgoCDClient_1.default.instance.updateImage(ctx, newImage, helmParamKeyName);
         }
         catch (error) {
             core.setFailed(error.message);
@@ -637,7 +644,8 @@ exports.labelsStringToObject = void 0;
  * @param {string} str labels csv
  * @returns { any } object
  */
-const labelsStringToObject = (str) => str.split(',')
+const labelsStringToObject = (str) => str
+    .split(',')
     .filter(e => e.trim() !== '')
     .reduce((o, i) => {
     const left = i.split('=')[0], right = i.split('=')[1];
