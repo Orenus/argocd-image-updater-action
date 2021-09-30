@@ -25,7 +25,6 @@ inputs:
   app_labels:
     required: false
     description: 'app label (key value pairs, comma separated ex. component=db-layer,type=backend)'
-    default: 443
   new_image: 
     required: true
     description: 'the image tag or fully qualified name (repo/image:tag) based on usage (helm params vs kustomize which expects full)'
@@ -36,6 +35,10 @@ inputs:
     required: false
     description: 'When set true, it will just print what it would have done'
     default: false
+  log_level:
+    required: false
+    description: 'error | info | debug'
+    default: 'info'
 
 # outputs:
 #   random_number:
