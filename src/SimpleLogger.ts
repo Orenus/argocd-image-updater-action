@@ -1,4 +1,5 @@
-/* eslint-disable no-console */
+import {debug} from '@actions/core'
+
 export enum SimpleLogLevelEum { // eslint-disable-line no-shadow
   ERROR,
   INFO,
@@ -28,14 +29,14 @@ export default class SimpleLogger {
   }
 
   debug(message: string): void {
-    this.logLevel <= SimpleLogLevelEum.DEBUG && console.log(message)
+    this.logLevel <= SimpleLogLevelEum.DEBUG && debug(message)
   }
 
   info(message: string): void {
-    this.logLevel <= SimpleLogLevelEum.INFO && console.log(message)
+    this.logLevel <= SimpleLogLevelEum.INFO && debug(message)
   }
 
   error(message: string): void {
-    this.logLevel <= SimpleLogLevelEum.ERROR && console.error(message)
+    this.logLevel <= SimpleLogLevelEum.ERROR && debug(message)
   }
 }

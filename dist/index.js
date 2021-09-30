@@ -492,13 +492,13 @@ exports.default = GitOpsAppInfo;
 /***/ }),
 
 /***/ 7911:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SimpleLogLevelEum = void 0;
-/* eslint-disable no-console */
+const core_1 = __nccwpck_require__(2186);
 var SimpleLogLevelEum;
 (function (SimpleLogLevelEum) {
     SimpleLogLevelEum[SimpleLogLevelEum["ERROR"] = 0] = "ERROR";
@@ -522,13 +522,13 @@ class SimpleLogger {
         return this._logLevel;
     }
     debug(message) {
-        this.logLevel <= SimpleLogLevelEum.DEBUG && console.log(message);
+        this.logLevel <= SimpleLogLevelEum.DEBUG && core_1.debug(message);
     }
     info(message) {
-        this.logLevel <= SimpleLogLevelEum.INFO && console.log(message);
+        this.logLevel <= SimpleLogLevelEum.INFO && core_1.debug(message);
     }
     error(message) {
-        this.logLevel <= SimpleLogLevelEum.ERROR && console.error(message);
+        this.logLevel <= SimpleLogLevelEum.ERROR && core_1.debug(message);
     }
 }
 exports.default = SimpleLogger;
