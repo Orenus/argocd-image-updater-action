@@ -40,10 +40,6 @@ inputs:
     description: 'error | info | debug'
     default: 'info'
 
-# outputs:
-#   random_number:
-#     description: ""
-#     value: ${{ steps.name.outputs.var }}
 runs:
   using: 'node12'
   main: 'dist/index.js'
