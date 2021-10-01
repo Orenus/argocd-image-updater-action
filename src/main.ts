@@ -8,7 +8,7 @@ const logger = SimpleLogger.instance
 
 async function run(): Promise<void> {
   try {
-    const actionLogLevel: string = core.getInput('log_level')
+    // const actionLogLevel: string = core.getInput('log_level')
     const argocdHost: string = core.getInput('argocd_host')
     const argocdPort = Number(core.getInput('argocd_port'))
     const argocdUsername: string = core.getInput('argocd_username')
@@ -19,8 +19,8 @@ async function run(): Promise<void> {
     const helmParamKeyName: string = core.getInput('helm_param_key_name')
     // const dryRun: boolean = core.getBooleanInput('dry_run');
 
-    const level = actionLogLevel as keyof typeof SimpleLogLevelEum
-    logger.setLogLevel(SimpleLogLevelEum[level])
+    // const level = actionLogLevel as keyof typeof SimpleLogLevelEum
+    logger.setLogLevel(SimpleLogLevelEum.DEBUG)
 
     const isLoggedIn: boolean = await ArgoCDClient.instance.login(
       argocdUsername,

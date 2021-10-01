@@ -615,7 +615,7 @@ const logger = SimpleLogger_1.default.instance;
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const actionLogLevel = core.getInput('log_level');
+            // const actionLogLevel: string = core.getInput('log_level')
             const argocdHost = core.getInput('argocd_host');
             const argocdPort = Number(core.getInput('argocd_port'));
             const argocdUsername = core.getInput('argocd_username');
@@ -625,8 +625,8 @@ function run() {
             const newImage = core.getInput('image');
             const helmParamKeyName = core.getInput('helm_param_key_name');
             // const dryRun: boolean = core.getBooleanInput('dry_run');
-            const level = actionLogLevel;
-            logger.setLogLevel(SimpleLogger_1.SimpleLogLevelEum[level]);
+            // const level = actionLogLevel as keyof typeof SimpleLogLevelEum
+            logger.setLogLevel(SimpleLogger_1.SimpleLogLevelEum.DEBUG);
             const isLoggedIn = yield ArgoCDClient_1.default.instance.login(argocdUsername, argocdPassword, argocdHost, argocdPort);
             if (!isLoggedIn) {
                 return;
