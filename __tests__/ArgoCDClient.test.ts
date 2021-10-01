@@ -36,13 +36,7 @@ describe('testing login cases', () => {
     apiURL = `http://${serverHost}/api/v1`
     mock.onPost(`${apiURL}/session`).reply(200, {data: {token: '1234'}})
     const useHttpsIsFalse = false
-    const isLoggedIn: boolean = await argo.login(
-      'kuku',
-      'muku',
-      serverHost,
-      80,
-      useHttpsIsFalse
-    )
+    const isLoggedIn: boolean = await argo.login('kuku', 'muku', serverHost, 80, useHttpsIsFalse)
 
     expect(isLoggedIn).toBeTruthy()
   })
@@ -50,12 +44,7 @@ describe('testing login cases', () => {
   test('login https other than 443 port happy path', async () => {
     apiURL = `https://${serverHost}:4444/api/v1`
     mock.onPost(`${apiURL}/session`).reply(200, {data: {token: '1234'}})
-    const isLoggedIn: boolean = await argo.login(
-      'kuku',
-      'muku',
-      serverHost,
-      4444
-    )
+    const isLoggedIn: boolean = await argo.login('kuku', 'muku', serverHost, 4444)
 
     expect(isLoggedIn).toBeTruthy()
   })
@@ -152,9 +141,7 @@ describe('testing applications api', () => {
     }
     const mockResultItem = appResultItem(resultItem)
 
-    mock
-      .onGet(`${apiURL}/applications`, {project: 'dummy'})
-      .reply(200, {items: [mockResultItem]})
+    mock.onGet(`${apiURL}/applications`, {project: 'dummy'}).reply(200, {items: [mockResultItem]})
     const context: ArgoCDContext = new ArgoCDContext()
     context.project = 'dummy'
     const apps: GitOpsAppInfo[] = await argo.getApps(context)
@@ -164,9 +151,7 @@ describe('testing applications api', () => {
   })
 
   test('get apps no apps happy path', async () => {
-    mock
-      .onGet(`${apiURL}/applications`, {project: 'dummy'})
-      .reply(200, {items: []})
+    mock.onGet(`${apiURL}/applications`, {project: 'dummy'}).reply(200, {items: []})
     const context: ArgoCDContext = new ArgoCDContext()
     context.project = 'dummy'
     const apps: GitOpsAppInfo[] = await argo.getApps(context)
@@ -200,9 +185,7 @@ describe('testing applications api', () => {
 
   test('get apps full-info returns many apps happy path', async () => {
     // whatever items full info the non transformed reply is
-    mock
-      .onGet(`${apiURL}/applications`, {project: 'dummy'})
-      .reply(200, [{}, {}])
+    mock.onGet(`${apiURL}/applications`, {project: 'dummy'}).reply(200, {items: [{}, {}]})
     const context: ArgoCDContext = new ArgoCDContext()
     context.project = 'dummy'
     const fullInfo = true
@@ -224,9 +207,7 @@ describe('testing applications api', () => {
     }
     const mockResultItem = appResultItem(resultItem)
 
-    mock
-      .onGet(`${apiURL}/applications`, {project: 'dummy'})
-      .reply(200, {items: [mockResultItem]})
+    mock.onGet(`${apiURL}/applications`, {project: 'dummy'}).reply(200, {items: [mockResultItem]})
     const context: ArgoCDContext = new ArgoCDContext()
     context.appName = 'dummy'
     const result: boolean = await argo.appExists(context)
@@ -235,9 +216,7 @@ describe('testing applications api', () => {
   })
 
   test('get app does not exist', async () => {
-    mock
-      .onGet(`${apiURL}/applications`, {project: 'dummy'})
-      .reply(200, {items: []})
+    mock.onGet(`${apiURL}/applications`, {project: 'dummy'}).reply(200, {items: []})
     const context: ArgoCDContext = new ArgoCDContext()
     context.appName = 'dummy'
     const result: boolean = await argo.appExists(context)
@@ -256,17 +235,19 @@ describe('testing applications api', () => {
 
   test('update image helm existing param happy path', async () => {
     const mockSourceTypeReply = {manifests: [], sourceType: 'Helm'}
-    const mockAppReply = [
-      {
-        spec: {
-          source: {
-            helm: {
-              parameters: [{name: 'name', value: 'some.image:1.0.3'}]
+    const mockAppReply = {
+      items: [
+        {
+          spec: {
+            source: {
+              helm: {
+                parameters: [{name: 'name', value: 'some.image:1.0.3'}]
+              }
             }
           }
         }
-      }
-    ]
+      ]
+    }
 
     const appName = 'dummy'
     const newImage = 'some.image:1.0.4'
@@ -299,15 +280,17 @@ describe('testing applications api', () => {
 
   test('update image helm non existing param happy path', async () => {
     const mockSourceTypeReply = {manifests: [], sourceType: 'Helm'}
-    const mockAppReply = [
-      {
-        spec: {
-          source: {
-            helm: {}
+    const mockAppReply = {
+      items: [
+        {
+          spec: {
+            source: {
+              helm: {}
+            }
           }
         }
-      }
-    ]
+      ]
+    }
 
     const appName = 'dummy'
     const newImage = 'some.image:1.0.4'
@@ -340,17 +323,19 @@ describe('testing applications api', () => {
 
   test('update image kustomize existing image happy path', async () => {
     const mockSourceTypeReply = {manifests: [], sourceType: 'Kustomize'}
-    const mockAppReply = [
-      {
-        spec: {
-          source: {
-            kustomize: {
-              images: ['some.image:1.0.3']
+    const mockAppReply = {
+      items: [
+        {
+          spec: {
+            source: {
+              kustomize: {
+                images: ['some.image:1.0.3']
+              }
             }
           }
         }
-      }
-    ]
+      ]
+    }
 
     const appName = 'dummy'
     const newImage = 'some.image:1.0.4'
@@ -383,15 +368,17 @@ describe('testing applications api', () => {
 
   test('update image kustomize non existing image happy path', async () => {
     const mockSourceTypeReply = {manifests: [], sourceType: 'Kustomize'}
-    const mockAppReply = [
-      {
-        spec: {
-          source: {
-            kustomize: {}
+    const mockAppReply = {
+      items: [
+        {
+          spec: {
+            source: {
+              kustomize: {}
+            }
           }
         }
-      }
-    ]
+      ]
+    }
 
     const appName = 'dummy'
     const newImage = 'some.image:1.0.4'

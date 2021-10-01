@@ -6,6 +6,25 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -20,7 +39,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const axios_1 = __importDefault(__nccwpck_require__(6545));
-const https_1 = __importDefault(__nccwpck_require__(7211));
+const https = __importStar(__nccwpck_require__(7211));
 const GitOpsAppInfo_1 = __importDefault(__nccwpck_require__(3978));
 const SimpleLogger_1 = __importDefault(__nccwpck_require__(7911));
 const common_1 = __nccwpck_require__(6979);
@@ -46,7 +65,7 @@ class ArgoCDClient {
      */
     get client() {
         if (!this.clientInstance) {
-            const httpsAgent = new https_1.default.Agent({
+            const httpsAgent = new https.Agent({
                 rejectUnauthorized: false
             });
             this.clientInstance = axios_1.default.create({ httpsAgent });
@@ -271,24 +290,22 @@ class ArgoCDClient {
      */
     getImagePatchKustomizePayload(app, newImageID) {
         var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!((_a = app.spec.source) === null || _a === void 0 ? void 0 : _a.kustomize)) {
-                throw new Error('unable to find the kustomize key on the source spec data!');
-            }
-            const imageRepo = `${newImageID.split(':')[0]}:`;
-            const imageToReplaceIndex = (((_b = app.spec.source.kustomize) === null || _b === void 0 ? void 0 : _b.images) || []).findIndex((e) => e.startsWith(imageRepo));
-            const patchOpReplace = {
-                op: 'replace',
-                path: `/spec/source/kustomize/images/${imageToReplaceIndex}`,
-                value: newImageID
-            };
-            const patchOpAdd = {
-                op: 'add',
-                path: '/spec/source/kustomize/images',
-                value: [newImageID]
-            };
-            return imageToReplaceIndex === -1 ? patchOpAdd : patchOpReplace;
-        });
+        if (!((_a = app.spec.source) === null || _a === void 0 ? void 0 : _a.kustomize)) {
+            throw new Error('unable to find the kustomize key on the source spec data!');
+        }
+        const imageRepo = `${newImageID.split('/')[0]}/`;
+        const imageToReplaceIndex = (((_b = app.spec.source.kustomize) === null || _b === void 0 ? void 0 : _b.images) || []).findIndex((e) => e.startsWith(imageRepo));
+        const patchOpReplace = {
+            op: 'replace',
+            path: `/spec/source/kustomize/images/${imageToReplaceIndex}`,
+            value: newImageID
+        };
+        const patchOpAdd = {
+            op: 'add',
+            path: '/spec/source/kustomize/images',
+            value: [newImageID]
+        };
+        return imageToReplaceIndex === -1 ? patchOpAdd : patchOpReplace;
     }
     /**
      * @description updates an app image
@@ -321,7 +338,7 @@ class ArgoCDClient {
             }
             const payload = {
                 name: context.appName,
-                patch: JSON.stringify(patchPayload),
+                patch: JSON.stringify([patchPayload]),
                 patchType: 'json'
             };
             yield this.patch(`/applications/${context.appName}`, payload);
@@ -336,10 +353,9 @@ class ArgoCDClient {
      */
     getApps(context, fullInfo = false) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.ensureIsLoggedIn();
             const getParams = {
                 params: {
-                    selector: context.selector,
+                    selector: !context.selector || Object.keys(context.selector).length === 0 ? undefined : context.selector,
                     name: context.appName,
                     project: context.project
                 }
@@ -355,15 +371,19 @@ class ArgoCDClient {
                 // else rethrow
                 throw ex;
             }
+            // got here with a response other than 200? don't know what to do...
             if (res.status !== 200) {
                 throw new Error(`Failed getting apps info: ${res.status}`);
             }
+            // full info requested? skip the blow transformation
             if (fullInfo) {
-                return res.data;
+                return res.data.items;
             }
+            // no data to transform? return empty array
             if (!res.data || res.data.length === 0) {
                 return [];
             }
+            // return transformation to GitOpsAppInfo array
             return res.data.items.map((a) => GitOpsAppInfo_1.default.fromApiResponse(a));
         });
     }
@@ -374,7 +394,6 @@ class ArgoCDClient {
      */
     appExists(context) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.ensureIsLoggedIn();
             if (!context.appName) {
                 throw new Error('appName must be provided in context');
             }
@@ -389,7 +408,7 @@ class ArgoCDClient {
      */
     createApp(appData) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.ensureIsLoggedIn();
+            // risky as there is 0 validation on data
             return this.post('/applications?validate=true', appData);
         });
     }
@@ -401,7 +420,6 @@ class ArgoCDClient {
      */
     addAppLabels(context, labels) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.ensureIsLoggedIn();
             const payload = [
                 {
                     op: 'add',
@@ -431,7 +449,6 @@ class ArgoCDClient {
      */
     delApp(appName) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.ensureIsLoggedIn();
             const res = this.delete(`/applications/${appName}`);
             return res.status === 200;
         });
@@ -439,7 +456,7 @@ class ArgoCDClient {
 }
 exports.default = ArgoCDClient;
 ArgoCDClient.msInstance = null;
-
+//# sourceMappingURL=ArgoCDClient.js.map
 
 /***/ }),
 
@@ -454,7 +471,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 class ArgoCDContext {
 }
 exports.default = ArgoCDContext;
-
+//# sourceMappingURL=ArgoCDContext.js.map
 
 /***/ }),
 
@@ -487,7 +504,7 @@ class GitOpsAppInfo {
     }
 }
 exports.default = GitOpsAppInfo;
-
+//# sourceMappingURL=GitOpsAppInfo.js.map
 
 /***/ }),
 
@@ -532,7 +549,7 @@ class SimpleLogger {
     }
 }
 exports.default = SimpleLogger;
-
+//# sourceMappingURL=SimpleLogger.js.map
 
 /***/ }),
 
@@ -548,7 +565,7 @@ var SyncSourceTypeEnum;
     SyncSourceTypeEnum["HELM"] = "Helm";
     SyncSourceTypeEnum["KUSTOMIZE"] = "Kustomize";
 })(SyncSourceTypeEnum = exports.SyncSourceTypeEnum || (exports.SyncSourceTypeEnum = {}));
-
+//# sourceMappingURL=common.js.map
 
 /***/ }),
 
@@ -627,7 +644,7 @@ function run() {
     });
 }
 run();
-
+//# sourceMappingURL=main.js.map
 
 /***/ }),
 
@@ -657,7 +674,7 @@ const labelsStringToObject = (str) => str
     return o;
 }, {});
 exports.labelsStringToObject = labelsStringToObject;
-
+//# sourceMappingURL=utils.js.map
 
 /***/ }),
 

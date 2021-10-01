@@ -1,5 +1,5 @@
 import axios from 'axios'
-import https from 'https'
+import * as https from 'https'
 import GitOpsAppInfo from './GitOpsAppInfo'
 import SimpleLogger from './SimpleLogger'
 import ArgoCDContext from './ArgoCDContext'
@@ -143,28 +143,20 @@ export default class ArgoCDClient {
   ): Promise<boolean> {
     if (!this.token) {
       const serverProtocol = serverPort === 443 || useHttps ? 'https' : 'http'
-      const port =
-        serverPort === 443 || serverPort === 80 ? '' : `:${serverPort}`
+      const port = serverPort === 443 || serverPort === 80 ? '' : `:${serverPort}`
       this.serverURL = `${serverProtocol}://${serverHost}${port}`
       this.apiPath = '/api/v1'
 
-      this.logger.info(
-        `Creating session @ ${this.serverURL} using username ${username}`
-      )
+      this.logger.info(`Creating session @ ${this.serverURL} using username ${username}`)
       try {
-        const res = await this.client.post(
-          `${this.serverURL}${this.apiPath}/session`,
-          {username, password}
-        )
+        const res = await this.client.post(`${this.serverURL}${this.apiPath}/session`, {username, password})
         if (res.status !== 200) {
           return false
         }
 
         this.logger.debug('Session created')
         this.token = res.data.token
-        this.client.defaults.headers.common[
-          'Authorization'
-        ] = `Bearer ${this.token}`
+        this.client.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
         return true
       } catch (ex) {
         this.logger.error(ex.message)
@@ -184,11 +176,7 @@ export default class ArgoCDClient {
    * @param {boolean} dryRun just simulate
    * @returns {Promise<boolean>} success / fail
    */
-  async sync(
-    context: ArgoCDContext,
-    createNamespace = false,
-    dryRun = false
-  ): Promise<boolean> {
+  async sync(context: ArgoCDContext, createNamespace = false, dryRun = false): Promise<boolean> {
     const options: any = {
       prune: false,
       dryRun
@@ -230,9 +218,7 @@ export default class ArgoCDClient {
     const result: any = await this.getAppManifests(appName)
 
     if (!result || !result.sourceType) {
-      throw new Error(
-        `don't know much about ${appName} manifest is missing sourceType`
-      )
+      throw new Error(`don't know much about ${appName} manifest is missing sourceType`)
     }
 
     if (result.sourceType === SyncSourceTypeEnum.HELM) {
@@ -248,18 +234,12 @@ export default class ArgoCDClient {
    * @param helmParamKeyName name of helm parameter key (there might be numerous keys and better not guess...)
    * @returns {any} the relevant payload
    */
-  private async getImagePatchHelmPayload(
-    app: any,
-    newImageID: string,
-    helmParamKeyName: string
-  ): Promise<any> {
+  private async getImagePatchHelmPayload(app: any, newImageID: string, helmParamKeyName: string): Promise<any> {
     if (!app.spec.source?.helm) {
       throw new Error('unable to find the helm key on the source spec data!')
     }
 
-    const imageParamIndex = (app.spec.source.helm.parameters || []).findIndex(
-      (e: any) => e.name === helmParamKeyName
-    )
+    const imageParamIndex = (app.spec.source.helm.parameters || []).findIndex((e: any) => e.name === helmParamKeyName)
 
     const patchOpReplace = {
       op: 'replace',
@@ -282,20 +262,15 @@ export default class ArgoCDClient {
    * @param {string} newImageID
    * @returns {any} the relevant payload
    */
-  private async getImagePatchKustomizePayload(
-    app: any,
-    newImageID: string
-  ): Promise<any> {
+  private getImagePatchKustomizePayload(app: any, newImageID: string): any {
     if (!app.spec.source?.kustomize) {
-      throw new Error(
-        'unable to find the kustomize key on the source spec data!'
-      )
+      throw new Error('unable to find the kustomize key on the source spec data!')
     }
 
-    const imageRepo = `${newImageID.split(':')[0]}:`
-    const imageToReplaceIndex = (
-      app.spec.source.kustomize?.images || []
-    ).findIndex((e: string) => e.startsWith(imageRepo))
+    const imageRepo = `${newImageID.split('/')[0]}/`
+    const imageToReplaceIndex = (app.spec.source.kustomize?.images || []).findIndex((e: string) =>
+      e.startsWith(imageRepo)
+    )
 
     const patchOpReplace = {
       op: 'replace',
@@ -329,9 +304,7 @@ export default class ArgoCDClient {
       throw new Error('appName is mandatory for updateImage procedure')
     }
 
-    const syncType: SyncSourceTypeEnum = await this.getSyncSourceType(
-      context.appName
-    )
+    const syncType: SyncSourceTypeEnum = await this.getSyncSourceType(context.appName)
 
     const fullInfo = true
     const apps: any[] = await this.getApps(context, fullInfo)
@@ -346,18 +319,14 @@ export default class ArgoCDClient {
       if (!helmParamKeyName) {
         throw new Error('helm parameter key name must be provided')
       }
-      patchPayload = this.getImagePatchHelmPayload(
-        apps[0],
-        newImageID,
-        helmParamKeyName
-      )
+      patchPayload = this.getImagePatchHelmPayload(apps[0], newImageID, helmParamKeyName)
     } else {
       patchPayload = this.getImagePatchKustomizePayload(apps[0], newImageID)
     }
 
     const payload = {
       name: context.appName,
-      patch: JSON.stringify(patchPayload),
+      patch: JSON.stringify([patchPayload]),
       patchType: 'json'
     }
 
@@ -372,15 +341,10 @@ export default class ArgoCDClient {
    * @param {boolean} fullInfo default is false
    * @returns any for fullInfo OR GitOpsAppInfo
    */
-  async getApps(
-    context: ArgoCDContext,
-    fullInfo = false
-  ): Promise<any[] | GitOpsAppInfo[]> {
-    this.ensureIsLoggedIn()
-
+  async getApps(context: ArgoCDContext, fullInfo = false): Promise<any[] | GitOpsAppInfo[]> {
     const getParams = {
       params: {
-        selector: context.selector,
+        selector: !context.selector || Object.keys(context.selector).length === 0 ? undefined : context.selector,
         name: context.appName,
         project: context.project
       }
@@ -396,18 +360,21 @@ export default class ArgoCDClient {
       throw ex
     }
 
+    // got here with a response other than 200? don't know what to do...
     if (res.status !== 200) {
       throw new Error(`Failed getting apps info: ${res.status}`)
     }
 
+    // full info requested? skip the blow transformation
     if (fullInfo) {
-      return res.data
+      return res.data.items
     }
 
+    // no data to transform? return empty array
     if (!res.data || res.data.length === 0) {
       return []
     }
-
+    // return transformation to GitOpsAppInfo array
     return res.data.items.map((a: any) => GitOpsAppInfo.fromApiResponse(a))
   }
 
@@ -417,8 +384,6 @@ export default class ArgoCDClient {
    * @returns {boolean} exists or not
    */
   async appExists(context: ArgoCDContext): Promise<boolean> {
-    this.ensureIsLoggedIn()
-
     if (!context.appName) {
       throw new Error('appName must be provided in context')
     }
@@ -432,8 +397,7 @@ export default class ArgoCDClient {
    * @returns axios response with full app created data
    */
   async createApp(appData: any): Promise<any> {
-    this.ensureIsLoggedIn()
-
+    // risky as there is 0 validation on data
     return this.post('/applications?validate=true', appData)
   }
 
@@ -444,8 +408,6 @@ export default class ArgoCDClient {
    * @returns {boolean} success / fail
    */
   async addAppLabels(context: ArgoCDContext, labels: any): Promise<boolean> {
-    this.ensureIsLoggedIn()
-
     const payload = [
       {
         op: 'add',
@@ -455,11 +417,9 @@ export default class ArgoCDClient {
     ]
 
     // const res = await this.patch(`/applications/${context.appName}`, payload);
-    const command = `argocd app patch ${
-      context.appName
-    } --patch='${JSON.stringify(payload)}' --insecure --server= --auth-token=${
-      this.token
-    }`
+    const command = `argocd app patch ${context.appName} --patch='${JSON.stringify(
+      payload
+    )}' --insecure --server= --auth-token=${this.token}`
     this.logger.debug(`Set app labels cmd: <<< ${command} >>>`)
 
     try {
@@ -479,8 +439,6 @@ export default class ArgoCDClient {
    * @returns {boolean}
    */
   async delApp(appName: string): Promise<boolean> {
-    this.ensureIsLoggedIn()
-
     const res: any = this.delete(`/applications/${appName}`)
     return res.status === 200
   }

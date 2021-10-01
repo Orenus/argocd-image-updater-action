@@ -21,4 +21,9 @@ jobs:
   #     - uses: actions/checkout@v2
   #     - uses: ./
   #       with:
-  #         milliseconds: 1000
+  #         argocd_host: 
+  #         argocd_username: 
+  #         argocd_password: 
+  #         app_name: 
+  #         new_image: 
+  #         log_level: debug
